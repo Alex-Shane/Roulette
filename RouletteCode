@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.9;
+
+contract Roulette
+{
+    address[] players;
+    address[] public losers;
+    uint256 odds;
+    uint256 playersTurn;
+    address public creator;
+    
+    constructor()
+    {
+        creator = msg.sender;
+    }
+    
+    function setOdds (uint256 probability) public
+    {
+        require(msg.sender == creator, "You must be the creator to set odds.");
+        odds = probability;
+    }
+    
+    function isALoser (address person) public view returns (bool)
+    {
+        for (uint256 k = 0; k < losers.length; k++)
+        {
+            if (losers[k] == person)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function isPlaying (address person) public view returns (bool)
+    {
+        for (uint256 k = 0; k < players.length; k++)
+        {
+            if (players[k] == person)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function addPlayer (address Player) public 
+    {
+        require (!isALoser(msg.sender), "You already lost, you can't play");
+        require (!isPlaying(msg.sender), "You are already playing");
+        players.push (Player);
+    }
+    
+    function lose (address player) private
+    {
+        address[] memory temp;
+        players = temp;
+        losers.push (player);
+        playersTurn = 0;
+    }
+    
+    function randomHelper() private view returns (uint) {
+        return uint(keccak256(abi.encodePacked(block.difficulty, block.timestamp, players)));
+    }
+    
+    function random () public view returns (uint)
+    {
+       return ((randomHelper() % (odds-1))+1);
+    }
+    
+    function play() public 
+    {
+        require (!isALoser(players[playersTurn]), "You have already lost, you can't play");
+        uint256 randNum = random();
+        if (randNum == 1)
+        {
+            lose(players[playersTurn]);
+        }
+        else
+        {
+            playersTurn++;
+        }
+    }
+    
+}
